@@ -93,8 +93,25 @@ app.delete('/event/:id', async (req, res) => {
 
 app.post('/join-event', async (req, res) => {
   const data = req.body;
-  const result = await joinedEventsCollection.insertOne(data);
-  res.send(result);
+  try {
+    const result = await joinedEventsCollection.insertOne(data);
+    if (data.eventId) {
+      try {
+        await eventsCollection.updateOne(
+          { _id: new ObjectId(data.eventId) },
+          { $inc: { volunteersJoined: 1 } }
+        );
+      } catch {
+        await eventsCollection.updateOne(
+          { id: data.eventId },
+          { $inc: { volunteersJoined: 1 } }
+        );
+      }
+    }
+    res.send(result);
+  } catch (err) {
+    res.status(500).send({ error: "Failed to join event" });
+  }
 });
 
 app.get('/my-events/:email', async (req, res) => {
