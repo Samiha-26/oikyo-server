@@ -1,31 +1,16 @@
 import express from 'express';
-import { MongoClient, ObjectId } from 'mongodb';
+import { ObjectId } from 'mongodb';
 import 'dotenv/config';
 import cors from 'cors';
 import { initialEvents } from './seedData.js';
+import { validateEvent } from './middlewares/validateEvent.js';
+import { eventsCol as eventsCollection, joinedEventsCol as joinedEventsCollection } from './config/db.js';
 
 const app = express();
 const PORT = process.env.PORT || 8000;
 
 app.use(cors());
 app.use(express.json());
-
-const client = new MongoClient(process.env.MONGODB_URL);
-
-export async function connectToMongoDB() {
-  try {
-    await client.connect();
-    console.log("You successfully connected to MongoDB!");
-    return client;
-  } catch (err) {
-    console.dir(err);
-  }
-}
-
-const mongoClient = await connectToMongoDB();
-const db = mongoClient.db("oikyo");
-const eventsCollection = db.collection("events");
-const joinedEventsCollection = db.collection("joined_events");
 
 app.get('/seed-events', async (req, res) => {
   try {
@@ -40,7 +25,7 @@ app.get('/seed-events', async (req, res) => {
   }
 });
 
-app.post('/add-event', async (req, res) => {
+app.post('/add-event', validateEvent, async (req, res) => {
   const data = req.body;
   const result = await eventsCollection.insertOne(data);
   res.send({ message: "Event created successfully", insertedId: result.insertedId });
