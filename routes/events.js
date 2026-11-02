@@ -3,6 +3,7 @@ import { ObjectId } from 'mongodb';
 import { eventsCol as eventsCollection } from '../config/db.js';
 import { initialEvents } from '../seedData.js';
 import { validateEvent } from '../middlewares/validateEvent.js';
+import { verifyToken } from '../middlewares/verifyToken.js';
 
 const router = express.Router();
 
@@ -19,7 +20,7 @@ router.get('/seed-events', async (req, res) => {
   }
 });
 
-router.post('/add-event', validateEvent, async (req, res) => {
+router.post('/add-event', verifyToken, validateEvent, async (req, res) => {
   const data = req.body;
   try {
     const result = await eventsCollection.insertOne(data);
@@ -85,7 +86,7 @@ router.get('/event/:id', async (req, res) => {
   }
 });
 
-router.patch('/event/:id', async (req, res) => {
+router.patch('/event/:id', verifyToken, async (req, res) => {
   const { id } = req.params;
   try {
     const updatedData = { ...req.body };
@@ -100,7 +101,7 @@ router.patch('/event/:id', async (req, res) => {
   }
 });
 
-router.delete('/event/:id', async (req, res) => {
+router.delete('/event/:id', verifyToken, async (req, res) => {
   const { id } = req.params;
   try {
     const result = await eventsCollection.deleteOne({ _id: new ObjectId(id) });
