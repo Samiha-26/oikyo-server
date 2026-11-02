@@ -2,9 +2,8 @@ import express from 'express';
 import { ObjectId } from 'mongodb';
 import 'dotenv/config';
 import cors from 'cors';
-import { initialEvents } from './seedData.js';
-import { validateEvent } from './middlewares/validateEvent.js';
 import { eventsCol as eventsCollection, joinedEventsCol as joinedEventsCollection } from './config/db.js';
+import eventsRouter from './routes/events.js';
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -12,69 +11,7 @@ const PORT = process.env.PORT || 8000;
 app.use(cors());
 app.use(express.json());
 
-app.get('/seed-events', async (req, res) => {
-  try {
-    const count = await eventsCollection.countDocuments();
-    if (count > 0) {
-      return res.send({ message: "Events already seeded in MongoDB", count });
-    }
-    const result = await eventsCollection.insertMany(initialEvents);
-    res.send({ message: "Events seeded successfully into MongoDB", insertedCount: result.insertedCount });
-  } catch (err) {
-    res.status(500).send({ error: "Failed to seed events" });
-  }
-});
-
-app.post('/add-event', validateEvent, async (req, res) => {
-  const data = req.body;
-  const result = await eventsCollection.insertOne(data);
-  res.send({ message: "Event created successfully", insertedId: result.insertedId });
-});
-
-app.get('/events', async (req, res) => {
-  const result = await eventsCollection.find().toArray();
-  res.send(result);
-});
-
-app.get('/recent-events', async (req, res) => {
-  const result = await eventsCollection.find().limit(6).toArray();
-  res.send(result);
-});
-
-app.get('/event/:id', async (req, res) => {
-  const { id } = req.params;
-  try {
-    const result = await eventsCollection.findOne({ _id: new ObjectId(id) });
-    res.send(result);
-  } catch (err) {
-    res.status(400).send({ error: "Invalid ID format" });
-  }
-});
-
-app.patch('/event/:id', async (req, res) => {
-  const { id } = req.params;
-  try {
-    const updatedData = { ...req.body };
-    delete updatedData._id;
-    const result = await eventsCollection.updateOne(
-      { _id: new ObjectId(id) },
-      { $set: updatedData }
-    );
-    res.json(result);
-  } catch (err) {
-    res.status(400).json({ error: "Failed to update event" });
-  }
-});
-
-app.delete('/event/:id', async (req, res) => {
-  const { id } = req.params;
-  try {
-    const result = await eventsCollection.deleteOne({ _id: new ObjectId(id) });
-    res.json(result);
-  } catch (err) {
-    res.status(400).json({ error: "Failed to delete event" });
-  }
-});
+app.use(eventsRouter);
 
 app.post('/join-event', async (req, res) => {
   const data = req.body;
@@ -119,16 +56,6 @@ app.post('/join-event', async (req, res) => {
     res.send(result);
   } catch (err) {
     res.status(500).send({ error: "Failed to join event" });
-  }
-});
-
-app.get('/my-events/:email', async (req, res) => {
-  const { email } = req.params;
-  try {
-    const result = await eventsCollection.find({ creatorEmail: email }).toArray();
-    res.send(result);
-  } catch (err) {
-    res.status(500).send({ error: "Failed to fetch user events" });
   }
 });
 
