@@ -137,7 +137,22 @@ app.get('/my-joined-events/:email', async (req, res) => {
 app.delete('/my-joined-events/:id', async (req, res) => {
   const { id } = req.params;
   try {
+    const joinedRecord = await joinedEventsCollection.findOne({ _id: new ObjectId(id) });
     const result = await joinedEventsCollection.deleteOne({ _id: new ObjectId(id) });
+
+    if (joinedRecord?.eventId) {
+      try {
+        await eventsCollection.updateOne(
+          { _id: new ObjectId(joinedRecord.eventId) },
+          { $inc: { volunteersJoined: -1 } }
+        );
+      } catch {
+        await eventsCollection.updateOne(
+          { id: joinedRecord.eventId },
+          { $inc: { volunteersJoined: -1 } }
+        );
+      }
+    }
     res.json(result);
   } catch (err) {
     res.status(400).json({ error: "Failed to delete joined event" });
