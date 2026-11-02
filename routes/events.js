@@ -31,7 +31,32 @@ router.post('/add-event', validateEvent, async (req, res) => {
 
 router.get('/events', async (req, res) => {
   try {
-    const result = await eventsCollection.find().toArray();
+    const { search, category, district, sort } = req.query;
+    const query = {};
+
+    if (search && search.trim()) {
+      const regex = { $regex: search.trim(), $options: 'i' };
+      query.$or = [{ title: regex }, { description: regex }, { location: regex }];
+    }
+
+    if (category && category !== 'All' && category.trim()) {
+      query.category = category.trim();
+    }
+
+    if (district && district !== 'All' && district.trim()) {
+      query.district = district.trim();
+    }
+
+    let sortOptions = { date: 1 };
+    if (sort === 'latest') {
+      sortOptions = { date: -1 };
+    } else if (sort === 'most_spots') {
+      sortOptions = { volunteersNeeded: -1 };
+    } else if (sort === 'earliest') {
+      sortOptions = { date: 1 };
+    }
+
+    const result = await eventsCollection.find(query).sort(sortOptions).toArray();
     res.send(result);
   } catch (err) {
     res.status(500).send({ error: "Failed to fetch events" });
@@ -40,7 +65,7 @@ router.get('/events', async (req, res) => {
 
 router.get('/recent-events', async (req, res) => {
   try {
-    const result = await eventsCollection.find().limit(6).toArray();
+    const result = await eventsCollection.find().sort({ date: 1 }).limit(6).toArray();
     res.send(result);
   } catch (err) {
     res.status(500).send({ error: "Failed to fetch recent events" });
