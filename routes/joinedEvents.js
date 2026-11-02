@@ -1,6 +1,7 @@
 import express from 'express';
 import { ObjectId } from 'mongodb';
 import { eventsCol as eventsCollection, joinedEventsCol as joinedEventsCollection } from '../config/db.js';
+import { verifyToken } from '../middlewares/verifyToken.js';
 
 const router = express.Router();
 
@@ -50,7 +51,7 @@ router.post('/join-event', async (req, res) => {
   }
 });
 
-router.get('/my-joined-events/:email', async (req, res) => {
+router.get('/my-joined-events/:email', verifyToken, async (req, res) => {
   const { email } = req.params;
   try {
     const result = await joinedEventsCollection.find({ userEmail: email }).toArray();
@@ -60,7 +61,7 @@ router.get('/my-joined-events/:email', async (req, res) => {
   }
 });
 
-router.delete('/my-joined-events/:id', async (req, res) => {
+router.delete('/my-joined-events/:id', verifyToken, async (req, res) => {
   const { id } = req.params;
   try {
     const joinedRecord = await joinedEventsCollection.findOne({ _id: new ObjectId(id) });

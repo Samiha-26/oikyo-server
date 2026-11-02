@@ -111,7 +111,7 @@ router.delete('/event/:id', verifyToken, async (req, res) => {
   }
 });
 
-router.get('/my-events/:email', async (req, res) => {
+router.get('/my-events/:email', verifyToken, async (req, res) => {
   const { email } = req.params;
   try {
     const result = await eventsCollection.find({ creatorEmail: email }).toArray();
