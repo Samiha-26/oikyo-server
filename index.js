@@ -94,6 +94,29 @@ app.delete('/event/:id', async (req, res) => {
 app.post('/join-event', async (req, res) => {
   const data = req.body;
   try {
+    if (!data.eventId || !data.userEmail) {
+      return res.status(400).send({ error: "Event ID and user email are required." });
+    }
+
+    const alreadyJoined = await joinedEventsCollection.findOne({
+      eventId: data.eventId,
+      userEmail: data.userEmail,
+    });
+    if (alreadyJoined) {
+      return res.status(400).send({ error: "You have already joined this event roster." });
+    }
+
+    let event = null;
+    try {
+      event = await eventsCollection.findOne({ _id: new ObjectId(data.eventId) });
+    } catch {
+      event = await eventsCollection.findOne({ id: data.eventId });
+    }
+
+    if (event && (event.volunteersJoined || 0) >= (event.volunteersNeeded || 1)) {
+      return res.status(400).send({ error: "Volunteer quota is completely full for this drive." });
+    }
+
     const result = await joinedEventsCollection.insertOne(data);
     if (data.eventId) {
       try {
