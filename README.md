@@ -1,96 +1,94 @@
-# Oikyo Server (ঐক্য) — Backend REST API
+# Oikyo Server (ঐক্য)
 
-> **Decentralized Civic Action & Grassroots Social Service API**  
-> **Backend Framework**: Express.js (Node.js ESM)  
-> **Database Engine**: MongoDB Atlas Native Driver  
-> **Security & Tokens**: `jose` (JWT verification with remote JWKS)  
-> **Client Application**: [Oikyo Frontend](https://github.com/Samiha-26/oikyo)
+The backend REST API for Oikyo, a community-driven platform for coordinating grassroots social service and disaster relief initiatives across Bangladesh. The server handles event creation, future-date validation, volunteer capacity quota management, and JWT-authenticated route security.
 
----
+Live API: https://oikyo-server.vercel.app
 
-## 🌟 Overview
+Client repository: https://github.com/Samiha-26/oikyo
 
-**Oikyo Server** provides high-reliability REST endpoints to coordinate community-driven relief initiatives across Bangladesh. The backend handles verified event authoring, strictly future-date validation, volunteer capacity quota management, real-time participant roster tracking, and JWT-authenticated security policies.
+Server repository: https://github.com/Samiha-26/oikyo-server
 
----
+## Features
 
-## 🛠️ Architecture & Tech Stack
+- REST endpoints for creating, browsing, updating, and deleting community service drives.
+- Search and filtering by keyword, action sector (Cleanup, Plantation, Donation, Winter Clothing, Medical Relief, Education, Water Sanitation), and district.
+- Sorting options for events by date (earliest, latest) or volunteer capacity (most spots available).
+- Live quota tracking for volunteer drives, automatically incrementing participant counts on join and decrementing on cancellation.
+- Duplicate prevention ensuring a user cannot join the same event roster more than once.
+- JWT verification middleware using `jose` with remote JWKS to secure mutations and organizer-specific routes.
+- Request payload and future-date validation preventing past dates from being submitted.
+- MongoDB native driver connection with automated collection setup and seed endpoints.
 
-* **Express.js (ESM Modules)**: Modular MVC architecture with dedicated routers (`routes/events.js`, `routes/joinedEvents.js`).
-* **MongoDB Atlas Native Driver**: Direct collection management with `MongoClient` and `ObjectId`.
-* **JWT Verification (`jose`)**: Remote JWKS integration verifying JSON Web Tokens issued by BetterAuth.
-* **Validation Middleware**: Comprehensive request payload and strictly future-date enforcement.
-* **CORS & JSON Parsers**: Configured for cross-origin client integration.
+## Tech stack
 
----
+- Node.js (ESM)
+- Express.js
+- MongoDB Atlas with native `mongodb` driver
+- Jose for JWT verification via remote JWKS
+- CORS and Dotenv
 
-## 📋 REST API Endpoints Reference
+## API endpoints
 
-### 1. Events Endpoints
+### Events
 
-| Method | Endpoint | Auth Required | Description |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/events` | No | Fetch all upcoming civic drives. Supports `search`, `category`, `district`, and `sort` query filters. |
-| `GET` | `/recent-events` | No | Fetch the 6 nearest upcoming initiatives for the landing page showcase. |
-| `GET` | `/event/:id` | No | Retrieve detailed logistical specifications and roster quota for a single event. |
-| `POST` | `/add-event` | **Yes (Bearer JWT)** | Create a new community drive with future-date and payload validation. |
-| `PATCH`| `/event/:id` | **Yes (Bearer JWT)** | Update event details (quota, description, location). |
-| `DELETE`| `/event/:id` | **Yes (Bearer JWT)** | Delete a drive from the active roster. |
-| `GET` | `/my-events/:email` | **Yes (Bearer JWT)** | Fetch all campaigns created by a specific authenticated organizer. |
-| `GET` | `/seed-events` | No | Initial database seeding endpoint for baseline 6-drive dataset. |
+- `GET /events` - Fetch all upcoming drives with optional `search`, `category`, `district`, and `sort` query parameters.
+- `GET /recent-events` - Fetch the six newest upcoming events for the landing page.
+- `GET /event/:id` - Fetch details for a single event by ID.
+- `POST /add-event` - Create a new event (protected, requires Bearer token).
+- `PATCH /event/:id` - Update event details (protected, requires Bearer token).
+- `DELETE /event/:id` - Delete an event (protected, requires Bearer token).
+- `GET /my-events/:email` - Get events organized by a specific user (protected, requires Bearer token).
 
-### 2. Volunteer Roster & Joined Drives
+### Joined events
 
-| Method | Endpoint | Auth Required | Description |
-| :--- | :--- | :--- | :--- |
-| `POST` | `/join-event` | No | Enlist as a volunteer. Checks capacity quotas, prevents duplicate sign-ups, and auto-increments event roster count by +1. |
-| `GET` | `/my-joined-events/:email` | **Yes (Bearer JWT)** | Fetch all confirmed volunteer mission commitments for an account. |
-| `DELETE`| `/my-joined-events/:id` | **Yes (Bearer JWT)** | Release/cancel a volunteer spot and auto-decrement event roster count by -1. |
+- `POST /join-event` - Register a user for an event, validating capacity and duplicate join.
+- `GET /my-joined-events/:email` - Get all events a user has joined (protected, requires Bearer token).
+- `DELETE /my-joined-events/:id` - Cancel a volunteer spot and release capacity (protected, requires Bearer token).
 
-### 3. System & Health
+### System
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/` | Root server status check. |
-| `GET` | `/health` | Server uptime and health probe. |
+- `GET /` - Root status endpoint.
+- `GET /health` - Server health check.
 
----
+## Project structure
 
-## 🔍 Query Parameters Reference (`GET /events`)
-
-* `search`: Case-insensitive text search across title, description, and meeting location.
-* `category`: Filter by sector (`Winter Clothing`, `Medical Relief`, `Clean Environment`, `Tree Planting`, `Education & Youth`, `Water Sanitation`).
-* `district`: Filter by any of the 64 districts (e.g. `Dhaka`, `Panchagarh`, `Satkhira`).
-* `sort`: Sort ordering (`earliest`, `latest`, `most_spots`).
-
----
-
-## 🚀 Installation & Local Development
-
-### 1. Clone the repository:
-```bash
-git clone https://github.com/Samiha-26/oikyo-server.git
-cd oikyo-server
+```text
+oikyo-server/
+├── config/
+│   └── db.js
+├── middlewares/
+│   ├── validateEvent.js
+│   └── verifyToken.js
+├── routes/
+│   ├── events.js
+│   └── joinedEvents.js
+├── index.js
+├── seedData.js
+├── vercel.json
+├── package.json
+└── README.md
 ```
 
-### 2. Install dependencies:
+## Run it locally
+
+Clone this repository and install packages:
+
 ```bash
 npm install
 ```
 
-### 3. Run the development server:
+Create a `.env` file in the project root:
+
+```env
+PORT=8000
+CLIENT_URL=http://localhost:3000
+MONGODB_URL=your-mongodb-connection-string
+```
+
+Start the development server:
+
 ```bash
 npm run dev
-# or: node index.js
 ```
 
-The server will initialize on port 8000:
-```text
-You successfully connected to MongoDB!
-Server is running on port 8000
-```
-
----
-
-## 📄 License
-MIT License
+The server runs on port 8000 by default.
